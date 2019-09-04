@@ -1,93 +1,99 @@
+'''
+Imports of  Sqlite3 tools
+            System tools
+            copyfile tools
+'''
 import sqlite3
 import sys
 from shutil import copyfile
 
-
-taskset_id = []
-taskset_list = []
-tasks = []
+'''
+Parameter declaration
+'''
 single_tasks = []
-job_ID = 0
-task_ID = 0
 two_tasks = []
-jobs_to_rewrite=[]
+job_counter = 0
 taskset_counter = 0
 taskset_case = []
 job_values = []
-jobey_values = []
+new_job_values = []
 
 
+def database_operations():
 
-def read_tasks_from_db():
-
+    
     db.execute("SELECT count(Set_ID) FROM TaskSet")
     taskset_counter = db.fetchall()[0][0]
-    print("Task_ID = ",taskset_counter)
-    db.execute("SELECT count(Set_ID) FROM Job")
-    job_ID = db.fetchall()[0][0]
-    print("Job_ID = ",job_ID)
+    print("Task_Counter = ",taskset_counter)
+    
 
+    db.execute("SELECT count(Set_ID) FROM Job")
+    job_counter = db.fetchall()[0][0]
+    print("Job_Counter = ",job_ID)
+    
+    
     db.execute("SELECT * FROM TaskSet WHERE Successful=0 AND TASK2_ID=-1")
     single_tasks = db.fetchall()
+    
+
     db.execute("SELECT * FROM TaskSet WHERE TASK3_ID=-1 AND TASK2_ID!=-1")
     two_tasks = db.fetchall()
+    
+    
     print(len(two_tasks),"Lenght of two Tasks")
     print(len(single_tasks),"Lenght of single Tasks")
-#    sys.exit()
-    counterA = 0
+
     for two_row in two_tasks:
-        #Clear taskset_case
-        if(counterA%1000 == 0):
-            print(counterA/1000," Tausend DONE")
-        counterA += 1
-#        print("Reihe aus Zweitertasks",two_row)
-        i = 0
+        
+        '''
+        Clearing chosen jobs and the jobs table
+        as well as the new_jobs table
+        '''
+        taskset_case = []
+        job_values = []
+        new_job_values = []
+        
+        
+        premature_break_counter = 0
+        
         for single_row in single_tasks:
+
             #get only 49 of the single tasks
             job_values = []
             taskset_case = []
             taskset_case.append((str(two_row[0]),str(two_row[2])))
             taskset_case.append((str(two_row[0]),str(two_row[3])))
             taskset_case.append((str(single_row[0]),str(single_row[2])))
-#            print(taskset_case)
 
-            jobey_values = []
             for case in taskset_case:
+                
                 db.execute('SELECT * FROM Job WHERE Set_ID=? AND TASK_ID=?',case)
                 job_values.append(db.fetchall())
-#            print(job_values)
-#            input()
-            for setty in job_values:
-#                print("Das ist Setty",setty)
-                for settey in setty:
-#                    print("Vor Bearbeitung:",settey)
-                #Neuen Counter in die Jobstabellen eintragen
-                    test = (taskset_counter,settey[1],job_ID,settey[3],settey[4],settey[5])
-#                    print(test)
-                    jobey_values.append(test)
-                    job_ID += 1
+
+            for set_of_single_jobs in job_values:
+                
+                for single_jobs in set_of_single_jobs:
+                    
+                    new_single_job = (taskset_counter,) + (single_jobs[1],) + (job_counter,) + single_jobs[3:]
+                    new_job_values.append(new_single_job)
+                    
+                    job_counter += 1
             
             
-#            input()
-            #for rauwa in jobey_values:
-            #    print("Reihe:",rauwa)
+            new_taskset_row = (taskset_counter, ) + (0,) + two_row[2:4] + (single_row[2],) + two_row[5:]
 
-
-#            print("Einzelreihe:",single_row)
-#            print("Zweierreihe:",two_row)
-            zweierreihe = (taskset_counter,0,two_row[2],two_row[3],single_row[2],two_row[5])
-#            print("Zweierreihe(veraendert):",zweierreihe)
-#            print("Entresultat:",jobey_values)
-            final_tasksets.append(zweierreihe)
-            final_jobs.append(jobey_values)
+            final_tasksets.append(new_taskset_row)
+            final_jobs.append(new_job_values)
 
             taskset_counter += 1
-#            print(jobey_values)
-#            input()
-            i += 1
-            if(i==50):
+            
+            
+            premature_break_counter += 1
+            '''
+            Break after *#premature_break_counter* Tasks are added to complete 3 tasksets
+            '''
+            if(premature_break_counter==50):
                 break
-
 
     for row in final_tasksets:
         db2.execute('INSERT INTO TaskSet VALUES (?,?,?,?,?,?)',row)
@@ -95,27 +101,43 @@ def read_tasks_from_db():
         db2.executemany('INSERT INTO Job VALUES (?,?,?,?,?,?)', row)
 
 
+def main():
+    '''
+    Getting Database from first argument
+    '''
+    database = sqlite3.connect(name + '.db')
+    db = database.cursor()
+    
+    '''
+    Copying Database from old to new with _changed
+    '''
+    copyfile(name,name + "_changed.db")
+    
+    '''
+    Getting the new database to write to
+    '''
+    database2 = sqlite3.connect(name + "_changed.db")
+    db2 = database2.cursor()
+    
+    
+    database_operations()
+    
+    
+    '''
+    Commiting the second and written database
+    '''
+    database2.commit()
+    
 
-
-name = sys.argv[1]
-database = sqlite3.connect(name + '.db')
-db = database.cursor()
-
-copyfile(name, name + "_changed.db")
-
-database2 = sqlite3.connect(name + "_changed.db")
-db2 = database2.cursor()
-
-#print(db.fetchall())
-
-read_tasks_from_db()
-
-database2.commit()
-#write_tasks_to_db()
-
-#write_taskset_and_job_to_db()
-
-#database.commit()
-database2.close()
-db.close()
-
+    '''
+    Closing both databases
+    '''
+    database2.close()
+    db.close()
+    
+    
+    
+    
+if __name__ == '__main__':
+    name = sys.argv[1]
+    main()
