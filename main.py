@@ -17,6 +17,7 @@ job_values = []
 jobey_values = []
 
 
+
 def read_tasks_from_db():
 
     db.execute("SELECT count(Set_ID) FROM TaskSet")
@@ -39,12 +40,12 @@ def read_tasks_from_db():
         if(counterA%1000 == 0):
             print(counterA/1000," Tausend DONE")
         counterA += 1
-        taskset_case = []
-        job_values = []
 #        print("Reihe aus Zweitertasks",two_row)
         i = 0
         for single_row in single_tasks:
             #get only 49 of the single tasks
+            job_values = []
+            taskset_case = []
             taskset_case.append((str(two_row[0]),str(two_row[2])))
             taskset_case.append((str(two_row[0]),str(two_row[3])))
             taskset_case.append((str(single_row[0]),str(single_row[2])))
@@ -61,7 +62,7 @@ def read_tasks_from_db():
                 for settey in setty:
 #                    print("Vor Bearbeitung:",settey)
                 #Neuen Counter in die Jobstabellen eintragen
-                    test = (taskset_counter,) + (settey[1],) + (job_ID,) + settey[3:]
+                    test = (taskset_counter,settey[1],job_ID,settey[3],settey[4],settey[5])
 #                    print(test)
                     jobey_values.append(test)
                     job_ID += 1
@@ -74,11 +75,12 @@ def read_tasks_from_db():
 
 #            print("Einzelreihe:",single_row)
 #            print("Zweierreihe:",two_row)
-            zweierreihe = (taskset_counter, ) + (0,) + two_row[2:4] + (single_row[2],) + two_row[5:]
+            zweierreihe = (taskset_counter,0,two_row[2],two_row[3],single_row[2],two_row[5])
 #            print("Zweierreihe(veraendert):",zweierreihe)
 #            print("Entresultat:",jobey_values)
-            db2.execute('INSERT INTO TaskSet VALUES (?,?,?,?,?,?)',zweierreihe)
-            db2.executemany('INSERT INTO Job VALUES (?,?,?,?,?,?)', jobey_values)
+            final_tasksets.append(zweierreihe)
+            final_jobs.append(jobey_values)
+
             taskset_counter += 1
 #            print(jobey_values)
 #            input()
@@ -87,36 +89,21 @@ def read_tasks_from_db():
                 break
 
 
+    for row in final_tasksets:
+        db2.execute('INSERT INTO TaskSet VALUES (?,?,?,?,?,?)',row)
+    for row in final_jobs:
+        db2.executemany('INSERT INTO Job VALUES (?,?,?,?,?,?)', row)
 
-def write_taskset_and_job_to_db():
-    global job_ID
-    global taskset_counter
-    for success, taskset in taskset_list:
-        taskset_values = [taskset_counter, 1] if success else [taskset_counter, 0]
-        for task in taskset:
-            task_id = tasks.index(get_task_hash(task))
-            taskset_values.append(task_id)
-            for number,job in task['jobs'].items():
-                try:
-                    job_values = (taskset_counter, task_id, job_ID, job[0], job[1], job[2])
-                    db.execute('INSERT INTO Job VALUES (?,?,?,?,?,?)', job_values)
-                    job_ID += 1
-                except IndexError as e:
-                    print('there was an error: ',job,'\n and the task: ',task)
-                    
-        taskset_values = taskset_values + [-1]*(6-len(taskset_values))
-        db.execute('INSERT INTO TaskSet VALUES (?,?,?,?,?,?)', taskset_values)
-        taskset_counter += 1
 
 
 
 name = sys.argv[1]
-database = sqlite3.connect(name)
+database = sqlite3.connect(name + '.db')
 db = database.cursor()
 
-copyfile(name,name + "_changed")
+copyfile(name, name + "_changed.db")
 
-database2 = sqlite3.connect(name + "_changed")
+database2 = sqlite3.connect(name + "_changed.db")
 db2 = database2.cursor()
 
 #print(db.fetchall())
