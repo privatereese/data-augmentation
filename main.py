@@ -23,25 +23,43 @@ final_jobs = []
 
 
 def database_operations():
+
+    print("Starting to analyze the given Database", name, '.db')
+
+    #Getting Counter to continue increasing the TaskSet_ID for new TaskSets
     db.execute("SELECT count(Set_ID) FROM TaskSet")
     taskset_counter = db.fetchall()[0][0]
     print("Task_Counter = ", taskset_counter)
 
+    #Getting Counter for Jobs to continue increasing the Job_ID for new JobLists
     db.execute("SELECT count(Set_ID) FROM Job")
     job_counter = db.fetchall()[0][0]
     print("Job_Counter = ", job_counter)
 
+    #Getting the set of unsuccessful tasksets with only one single task
     db.execute("SELECT * FROM TaskSet WHERE Successful=0 AND TASK2_ID=-1")
     single_tasks = db.fetchall()
 
-    db.execute("SELECT count(*) FROM TaskSet WHERE Successful=1 AND TASK2_ID!=-1 AND TASK3_ID!=-1")
-    successful_tasks3 = db.fetchall()[0][0]
-    db.execute("SELECT count(*) FROM TaskSet WHERE Successful=0 AND TASK2_ID!=-1 AND TASK3_ID!=-1")
-    unsuccessful_tasks3 = db.fetchall()[0][0]
-
+    #Getting the set of *all* tasksets with only two tasks
     db.execute("SELECT * FROM TaskSet WHERE TASK3_ID=-1 AND TASK2_ID!=-1")
     two_tasks = db.fetchall()
 
+    #Getting the count of successfully running tasksets with only two tasks
+    db.execute("SELECT count(*) FROM TaskSet WHERE Successful=1 AND TASK2_ID!=-1 AND TASK3_ID!=-1")
+    successful_tasks3 = db.fetchall()[0][0]
+
+    #Getting the count of unsuccessful tasksets with only one task
+    db.execute("SELECT count(*) FROM TaskSet WHERE Successful=0 AND TASK2_ID!=-1 AND TASK3_ID!=-1")
+    unsuccessful_tasks3 = db.fetchall()[0][0]
+
+
+    '''
+    Printing the values we got and calculating the amount of bad_tasksets one needs 
+    to generate to get a 50:50 set of successful and unsuccessful tasksets.
+    If the Number is negative, there are more unsuccessful datasets than successful ones.
+    Please consider using a higher number than suggested, based on the idea of having more tasksets
+    rather than having less unsuccessful ones.
+    '''
     print(len(two_tasks), "Length of two Tasks")
     print(len(single_tasks), "Length of single Tasks")
     print(successful_tasks3, "Number of successful Tasks in Level 3")
@@ -49,8 +67,10 @@ def database_operations():
     print("Your added failed 3Task-Tasksets will be", (len(two_tasks) - 1) * (len(single_tasks) - 1))
     print("It is calculated from unsuccessful 1Task-Tasksets times every 2Task-Taskset")
     print("Please give a number between one and ", len(single_tasks) - 1)
-    print("Your best guess would be:", (successful_tasks3 - unsuccessful_tasks3) / (len(two_tasks) - 1))
+    print("Your best guess would be equal to or higher than(please use whole numbers):", (successful_tasks3 - unsuccessful_tasks3) / (len(two_tasks) - 1) + 1)
     premature_break_condition = input("Please select your value and press enter:")
+    #Casting the break condition to int, because it cannot be compared to the counter otherwise
+    premature_break_condition = int(premature_break_condition)
     print("Chosen value:", premature_break_condition)
 
     with tqdm(total=len(two_tasks + single_tasks)) as pbar:
