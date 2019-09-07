@@ -18,7 +18,8 @@ taskset_counter = 0
 taskset_case = []
 job_values = []
 new_job_values = []
-
+final_tasksets = []
+final_jobs = []
 
 def database_operations():
 
