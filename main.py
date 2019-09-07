@@ -86,8 +86,8 @@ def database_operations():
 
                 new_taskset_row = (taskset_counter, 0, two_row[2], two_row[3], single_row[2], two_row[5])
 
-                final_tasksets.append(new_taskset_row)
-                final_jobs.append(new_job_values)
+                db2.execute('INSERT INTO TaskSet VALUES (?,?,?,?,?,?)', new_taskset_row)
+                db2.executemany('INSERT INTO Job VALUES (?,?,?,?,?,?)', new_job_values)
 
                 taskset_counter += 1
 
@@ -99,11 +99,6 @@ def database_operations():
                     break
 
             pbar.update(1)
-
-    for row in final_tasksets:
-        db2.execute('INSERT INTO TaskSet VALUES (?,?,?,?,?,?)', row)
-    for row in final_jobs:
-        db2.executemany('INSERT INTO Job VALUES (?,?,?,?,?,?)', row)
 
 
 def main():
