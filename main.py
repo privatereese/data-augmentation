@@ -95,7 +95,7 @@ def data_augmentation(db_input,db_output):
 
                 for case in taskset_case:
                     db_input.execute('SELECT * FROM Job WHERE Set_ID=? AND TASK_ID=?', case)
-                    job_values.append(db.fetchall())
+                    job_values.append(db_input.fetchall())
 
                 for set_of_single_jobs in job_values:
 
