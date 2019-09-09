@@ -205,11 +205,11 @@ def main():
 
         data_augmentation(db,db2)
 
-    if functionname == "runtime":
+    elif functionname == "runtime":
 
         runtimemath(db,db2)
 
-    if functionname == "both":
+    elif functionname == "both":
 
         data_augmentation(db,db2)
         runtimemath(db2,db2)
