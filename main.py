@@ -174,7 +174,7 @@ def generate_dict(cursor):
     for i in range(0,401):
         tasks[i] = [-1,-1,-1]
     for index,command_option in enumerate(("min","max","avg"),0):
-        sqlstring = "SELECT Task_ID, CASE when End_Date < Start_Date Then {command}(((4294967 - Start_Date) + End_Date)) when End_Date > Start_Date then {command}((End_Date - Start_Date)) END Runtimes FROM Job WHERE Exit_Value='EXIT' GROUP BY Task_ID;".format(command=command_option)
+        sqlstring = "SELECT Task_ID, {command}(CASE when End_Date < Start_Date Then ((4294967 - Start_Date) + End_Date) when End_Date > Start_Date then (End_Date - Start_Date) END) as Runtimes FROM Job WHERE Exit_Value='EXIT' GROUP BY Task_ID;".format(command=command_option)
         cursor.execute(sqlstring)
         dataList = cursor.fetchall()
         for task in dataList:
